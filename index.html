@@ -1,0 +1,1680 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Pengurusan Aduan Rasmi UMT</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            umt: {
+              navy: '#002B49',
+              gold: '#C59B27',
+              goldLight: '#E8BF4C',
+              dark: '#001A2C',
+              lightBlue: '#E8F1F7',
+              accentRed: '#9E1B32'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom scrollbar and modal transitions */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .badge-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .6; } }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col font-sans">
+
+  <header class="bg-umt-navy text-white shadow-lg sticky top-0 z-40 border-b border-umt-gold/30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        <!-- Logo & Branding -->
+        <div class="flex items-center space-x-4">
+          <div class="w-12 h-12 bg-white rounded-xl shadow-md flex items-center justify-center p-1.5 border border-umt-gold">
+            <div class="w-full h-full bg-umt-navy rounded-lg flex items-center justify-center text-umt-gold font-black text-xl tracking-tighter">
+              UMT
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h1 class="text-lg sm:text-xl font-extrabold tracking-tight text-white leading-tight">
+                SISTEM PENGURUSAN ADUAN
+              </h1>
+              <span class="bg-red-600/90 text-white text-[10px] font-black uppercase px-2 py-0.5 rounded tracking-widest border border-red-400">
+                SULIT
+              </span>
+            </div>
+            <p class="text-xs text-slate-300 font-medium hidden sm:block">
+              Unit Integriti & Tatatertib • Universiti Malaysia Terengganu
+            </p>
+          </div>
+        </div>
+
+        <!-- Mode & Simulation Nav Items -->
+        <div class="flex items-center space-x-2 sm:space-x-3">
+          <!-- Live Email Simulation Drawer Button -->
+          <button onclick="toggleEmailDrawer()" 
+            class="relative inline-flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-700 text-amber-300 border border-amber-400/40 px-3 py-2 rounded-lg text-xs font-semibold shadow-sm transition">
+            <i class="fa-solid fa-envelope-open-text text-sm"></i>
+            <span class="hidden md:inline">Peti Notifikasi E-mel</span>
+            <span id="emailNotificationBadge" class="hidden absolute -top-1.5 -right-1.5 bg-amber-500 text-slate-900 font-black text-[10px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-umt-navy">
+              0
+            </span>
+          </button>
+
+          <!-- Role Toggle Buttons -->
+          <div class="bg-slate-900/70 p-1 rounded-xl flex items-center border border-white/10">
+            <button id="btnRolePublic" onclick="switchView('public')" 
+              class="px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 bg-umt-gold text-slate-950 shadow-sm">
+              <i class="fa-solid fa-file-pen"></i>
+              <span>Borang Aduan</span>
+            </button>
+            <button id="btnRoleAdmin" onclick="switchView('admin')" 
+              class="px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 text-slate-300 hover:text-white">
+              <i class="fa-solid fa-shield-halved"></i>
+              <span>Panel Admin</span>
+              <span id="pendingCounterBadge" class="ml-1 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+                0
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    
+    <!-- ========================================================================= -->
+    <!-- VIEW 1: PORTAL PENGADU (PUBLIC & WARGA UMT)                              -->
+    <!-- ========================================================================= -->
+    <div id="viewPublic" class="space-y-6">
+      
+      <!-- Informational Banner -->
+      <div class="bg-gradient-to-r from-blue-900 via-umt-navy to-slate-900 text-white rounded-2xl p-6 shadow-md border border-slate-700/50">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="space-y-1.5 max-w-3xl">
+            <div class="inline-flex items-center gap-2 bg-umt-gold/20 text-umt-goldLight text-xs px-3 py-1 rounded-full font-semibold border border-umt-gold/40">
+              <i class="fa-solid fa-lock"></i> Saluran Selamat & Terpelihara (Whistleblower Protection)
+            </div>
+            <h2 class="text-xl sm:text-2xl font-bold">Pengemukaan Maklumat & Aduan Rasmi</h2>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Borang ini terbuka kepada <strong>Warga UMT (Staf & Pelajar)</strong> serta <strong>Orang Awam</strong>. Maklumat anda dilindungi di bawah Polisi Pemberi Maklumat UMT. <em>Sistem tidak menjana nombor aduan serta-merta</em> — pengesahan penerimaan beserta Nombor Rekod akan dihantar ke e-mel anda setelah disaring oleh Urus Setia UMT.
+            </p>
+          </div>
+          <div class="shrink-0 bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+            <span class="block text-xs uppercase font-bold tracking-wider text-slate-400">Pilihan Saluran</span>
+            <span class="text-xl font-extrabold text-umt-gold">2 Kategori Rasmi</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200">
+        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+          Langkah 1: Sila Pilih Jenis Aduan Yang Ingin Dikemukakan
+        </label>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          <!-- Card Option Form A -->
+          <label class="relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition hover:border-umt-navy hover:bg-blue-50/30"
+                 id="labelOptionFormA" onclick="setComplaintType('FORM_A')">
+            <input type="radio" name="radioFormType" value="FORM_A" checked class="peer sr-only">
+            <div class="flex items-start justify-between">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-lg bg-blue-100 text-umt-navy flex items-center justify-center font-bold text-lg">
+                  A
+                </div>
+                <div>
+                  <h3 class="font-bold text-slate-900 text-sm sm:text-base">FORM A: Dakwaan Salah Laku</h3>
+                  <p class="text-xs text-slate-500">Improper Conduct / Whistleblower Policy</p>
+                </div>
+              </div>
+              <div class="w-5 h-5 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs check-icon peer-checked:border-umt-navy peer-checked:bg-umt-navy peer-checked:text-white">
+                <i class="fa-solid fa-check text-[10px]"></i>
+              </div>
+            </div>
+            <p class="mt-3 text-xs text-slate-600 leading-relaxed">
+              Untuk salah laku salah guna kuasa, penyelewengan, pelanggaran tatatertib, atau sebarang salah laku di bawah Polisi Pemberi Maklumat UMT.
+            </p>
+          </label>
+
+          <!-- Card Option Form B -->
+          <label class="relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition hover:border-red-600 hover:bg-red-50/30"
+                 id="labelOptionFormB" onclick="setComplaintType('FORM_B')">
+            <input type="radio" name="radioFormType" value="FORM_B" class="peer sr-only">
+            <div class="flex items-start justify-between">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-lg bg-red-100 text-red-700 flex items-center justify-center font-bold text-lg">
+                  B
+                </div>
+                <div>
+                  <h3 class="font-bold text-slate-900 text-sm sm:text-base">FORM B: Gangguan Seksual</h3>
+                  <p class="text-xs text-slate-500">Sexual Harassment Complaint Form</p>
+                </div>
+              </div>
+              <div class="w-5 h-5 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs check-icon peer-checked:border-red-600 peer-checked:bg-red-600 peer-checked:text-white">
+                <i class="fa-solid fa-check text-[10px]"></i>
+              </div>
+            </div>
+            <p class="mt-3 text-xs text-slate-600 leading-relaxed">
+              Untuk aduan perlakuan gangguan seksual sama ada secara lisan, fizikal, isyarat atau visual melibatkan staf/pegawai UMT.
+            </p>
+          </label>
+        </div>
+      </div>
+
+      <form id="complaintSubmissionForm" onsubmit="handleComplaintSubmit(event)" class="space-y-6">
+        
+        <!-- SECTION A: BUTIRAN PENGADU (COMMON FIELDS) -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+            <div class="flex items-center space-x-3">
+              <span class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 font-extrabold flex items-center justify-center text-sm border border-slate-300">
+                A
+              </span>
+              <div>
+                <h3 class="font-bold text-slate-900 text-base">BUTIRAN PEMBERI MAKLUMAT / PENGADU</h3>
+                <p class="text-xs text-slate-500">Personal Particulars of Whistleblower / Complainant</p>
+              </div>
+            </div>
+            <span class="text-xs font-semibold text-red-600">* Wajib diisi</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Kategori Pengadu -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Kategori Pengadu *</label>
+              <select id="complainant_category" required onchange="toggleComplainantCategory()"
+                class="w-full text-xs p-2.5 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-umt-navy focus:border-umt-navy">
+                <option value="PUBLIC">Orang Awam (Public)</option>
+                <option value="UMT_STAFF">Staf UMT (Warga UMT)</option>
+                <option value="UMT_STUDENT">Pelajar UMT (Warga UMT)</option>
+              </select>
+            </div>
+
+            <!-- Nama Penuh -->
+            <div class="md:col-span-2">
+              <label class="block text-xs font-bold text-slate-700 mb-1">Nama Penuh (Name) *</label>
+              <input type="text" id="full_name" required placeholder="Contoh: Ahmad bin Abdullah / Dr. Siti Nor"
+                class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-umt-navy focus:border-umt-navy">
+            </div>
+
+            <!-- No IC / Passport / No Staf -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1" id="labelIcNo">
+                No. IC / No. Paspot / No. Staf *
+              </label>
+              <input type="text" id="ic_no" required placeholder="Contoh: 940512-11-5432 / ST10482"
+                class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-umt-navy focus:border-umt-navy">
+            </div>
+
+            <!-- Warganegara -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Warganegara (Nationality) *</label>
+              <input type="text" id="nationality" required value="Warganegara Malaysia"
+                class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-umt-navy focus:border-umt-navy">
+            </div>
+
+            <!-- Bangsa -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Bangsa (Race)</label>
+              <input type="text" id="race" placeholder="Melayu / Cina / India / Lain-lain"
+                class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-umt-navy focus:border-umt-navy">
+            </div>
+
+            <!-- Umur -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Umur (Age)</label>
+              <input type="number" id="age" min="15" max="100" placeholder="Contoh: 28"
+                class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-umt-navy focus:border-umt-navy">
+            </div>
+
+            <!-- Jawatan / Pekerjaan -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Jawatan / Pekerjaan (Designation) *</label>
+              <input type="text" id="occupation" required placeholder="Contoh: Pegawai Penyelidik / Pelajar / Swasta"
+                class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-umt-navy focus:border-umt-navy">
+            </div>
+
+            <!-- No Telefon -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">No. Telefon Bimbit (Preferred Contact No.) *</label>
+              <input type="tel" id="phone_no" required placeholder="Contoh: 013-9876543"
+                class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-umt-navy focus:border-umt-navy">
+            </div>
+
+            <!-- Alamat E-mel (Kritikal) -->
+            <div class="md:col-span-2">
+              <label class="block text-xs font-bold text-slate-700 mb-1">
+                Alamat E-mel (Email) * <span class="text-umt-accentRed font-normal">(Notifikasi rasmi penerimaan & keputusan akan dihantar ke sini)</span>
+              </label>
+              <input type="email" id="email" required placeholder="pengadu@example.com / s12345@pps.umt.edu.my"
+                class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-umt-navy focus:border-umt-navy bg-amber-50/30">
+            </div>
+
+            <!-- Waktu sesuai dihubungi -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Waktu Sesuai Dihubungi (Suitable Time)</label>
+              <input type="text" id="suitable_time" placeholder="Contoh: 9.00 pagi - 12.00 tengah hari"
+                class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-umt-navy focus:border-umt-navy">
+            </div>
+          </div>
+        </div>
+
+        <div id="wrapperFormA" class="space-y-6">
+          
+          <!-- SECTION B (FORM A): MAKLUMAT STAF UMT YANG TERLIBAT -->
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+            <div class="flex items-center space-x-3 pb-4 border-b border-slate-100 mb-5">
+              <span class="w-8 h-8 rounded-lg bg-blue-100 text-blue-900 font-extrabold flex items-center justify-center text-sm border border-blue-200">
+                B
+              </span>
+              <div>
+                <h3 class="font-bold text-slate-900 text-base">MAKLUMAT STAF UMT YANG TERLIBAT DALAM SALAH LAKU</h3>
+                <p class="text-xs text-slate-500">Information of UMT Staff Involved in Improper Conduct</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Nama Staf Terlibat (Staff Name) *</label>
+                <input type="text" id="fa_staff_name" placeholder="Nama staf / pegawai UMT"
+                  class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-umt-navy focus:border-umt-navy">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Jawatan / Gred Staf (Designation / Position)</label>
+                <input type="text" id="fa_staff_position" placeholder="Contoh: Pensyarah Kanan / Pegawai Tadbir"
+                  class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-umt-navy focus:border-umt-navy">
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-xs font-bold text-slate-700 mb-1">Bagaimana Anda Kenal Staf Ini? (How do you know this staff?)</label>
+                <input type="text" id="fa_how_know" placeholder="Contoh: Penyelia penyelidikan / Pegawai urusan perolehan fakulti"
+                  class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-umt-navy focus:border-umt-navy">
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION C (FORM A): MAKLUMAT SALAH LAKU -->
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+            <div class="flex items-center space-x-3 pb-4 border-b border-slate-100 mb-5">
+              <span class="w-8 h-8 rounded-lg bg-blue-100 text-blue-900 font-extrabold flex items-center justify-center text-sm border border-blue-200">
+                C
+              </span>
+              <div>
+                <h3 class="font-bold text-slate-900 text-base">MAKLUMAT SALAH LAKU</h3>
+                <p class="text-xs text-slate-500">Details of Improper Conduct</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Tarikh Kejadian (Date) *</label>
+                <input type="date" id="fa_incident_date"
+                  class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-umt-navy focus:border-umt-navy">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Masa Kejadian (Time)</label>
+                <input type="time" id="fa_incident_time"
+                  class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-umt-navy focus:border-umt-navy">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Tempat / Lokasi Kejadian (Place) *</label>
+                <input type="text" id="fa_incident_place" placeholder="Contoh: Fakulti Perikanan / Bilik Mesyuarat"
+                  class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-umt-navy focus:border-umt-navy">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">
+                Keterangan / Butiran Salah Laku (Details of Improper Conduct) *
+              </label>
+              <textarea id="fa_details" rows="5" placeholder="Sila perihalkan fakta salah laku secara terperinci, tarikh-tarikh transaksi atau insiden yang berlaku..."
+                class="w-full text-xs p-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-umt-navy focus:border-umt-navy leading-relaxed"></textarea>
+            </div>
+          </div>
+
+          <!-- SECTION D (FORM A): MAKLUMAT SAKSI (MAKSIMUM 2 ORANG) -->
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+            <div class="flex items-center space-x-3 pb-4 border-b border-slate-100 mb-5">
+              <span class="w-8 h-8 rounded-lg bg-blue-100 text-blue-900 font-extrabold flex items-center justify-center text-sm border border-blue-200">
+                D
+              </span>
+              <div>
+                <h3 class="font-bold text-slate-900 text-base">MAKLUMAT SAKSI (JIKA ADA)</h3>
+                <p class="text-xs text-slate-500">Additional Information - Witness Details (Maksimum 2 orang)</p>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <!-- Saksi 1 -->
+              <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <span class="block text-xs font-bold text-slate-800 mb-2">Saksi 1</span>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <input type="text" id="fa_witness1_name" placeholder="Nama Saksi 1" class="text-xs p-2 rounded border border-slate-300">
+                  <input type="text" id="fa_witness1_occupation" placeholder="Jawatan / Pekerjaan" class="text-xs p-2 rounded border border-slate-300">
+                  <input type="tel" id="fa_witness1_phone" placeholder="No. Telefon" class="text-xs p-2 rounded border border-slate-300">
+                </div>
+              </div>
+              <!-- Saksi 2 -->
+              <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <span class="block text-xs font-bold text-slate-800 mb-2">Saksi 2</span>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <input type="text" id="fa_witness2_name" placeholder="Nama Saksi 2" class="text-xs p-2 rounded border border-slate-300">
+                  <input type="text" id="fa_witness2_occupation" placeholder="Jawatan / Pekerjaan" class="text-xs p-2 rounded border border-slate-300">
+                  <input type="tel" id="fa_witness2_phone" placeholder="No. Telefon" class="text-xs p-2 rounded border border-slate-300">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+            <div class="flex items-center space-x-3 pb-4 border-b border-slate-100 mb-5">
+              <span class="w-8 h-8 rounded-lg bg-blue-100 text-blue-900 font-extrabold flex items-center justify-center text-sm border border-blue-200">
+                E
+              </span>
+              <div>
+                <h3 class="font-bold text-slate-900 text-base">ADUAN KEPADA PIHAK BERKUASA LAIN</h3>
+                <p class="text-xs text-slate-500">Pernahkah anda membuat aduan berkenaan perkara ini kepada pihak berkuasa lain sebelum ini?</p>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <div class="flex items-center gap-6">
+                <label class="inline-flex items-center text-xs font-bold text-slate-800 cursor-pointer">
+                  <input type="radio" name="fa_reported_before" value="NO" checked onchange="toggleExternalReport(false)" class="mr-2">
+                  TIDAK (NO)
+                </label>
+                <label class="inline-flex items-center text-xs font-bold text-slate-800 cursor-pointer">
+                  <input type="radio" name="fa_reported_before" value="YES" onchange="toggleExternalReport(true)" class="mr-2">
+                  YA (YES)
+                </label>
+              </div>
+
+              <!-- Sub-form jika YA -->
+              <div id="fa_external_report_box" class="hidden p-4 bg-amber-50/50 rounded-xl border border-amber-200 space-y-3">
+                <p class="text-xs font-bold text-slate-700">Sila tandakan pihak berkuasa yang terlibat:</p>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                  <label class="flex items-center gap-2"><input type="checkbox" id="chk_police"> Polis DiRaja Malaysia</label>
+                  <label class="flex items-center gap-2"><input type="checkbox" id="chk_sprm"> SPRM (MACC)</label>
+                  <label class="flex items-center gap-2"><input type="checkbox" id="chk_sc"> Suruhanjaya Sekuriti</label>
+                  <label class="flex items-center gap-2"><input type="checkbox" id="chk_mof"> Kementerian Kewangan</label>
+                  <label class="flex items-center gap-2"><input type="checkbox" id="chk_others"> Lain-lain (Nyatakan)</label>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  <input type="date" id="fa_external_date" placeholder="Tarikh Laporan Dibuat" class="text-xs p-2 rounded border border-slate-300">
+                  <input type="text" id="fa_external_status" placeholder="Status Terkini Laporan Tersebut" class="text-xs p-2 rounded border border-slate-300">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="wrapperFormB" class="space-y-6 hidden">
+          
+          <!-- SECTION B (FORM B): MAKLUMAT PEGAWAI YANG DISYAKI -->
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+            <div class="flex items-center space-x-3 pb-4 border-b border-slate-100 mb-5">
+              <span class="w-8 h-8 rounded-lg bg-red-100 text-red-900 font-extrabold flex items-center justify-center text-sm border border-red-200">
+                B
+              </span>
+              <div>
+                <h3 class="font-bold text-slate-900 text-base">MAKLUMAT PEGAWAI YANG DISYAKI MENGGANGGU</h3>
+                <p class="text-xs text-slate-500">Information of Officer Suspected of Harassing</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Nama Pegawai Disyaki (Officer Name) *</label>
+                <input type="text" id="fb_suspect_name" placeholder="Nama penuh pegawai"
+                  class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 focus:border-red-600">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Jawatan dan Gred (Designation and Grade)</label>
+                <input type="text" id="fb_suspect_grade" placeholder="Contoh: Pensyarah DS51 / Pegawai Keselamatan KP29"
+                  class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 focus:border-red-600">
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-xs font-bold text-slate-700 mb-1">Alamat Pejabat / Lokasi Bertugas (Office Address)</label>
+                <input type="text" id="fb_suspect_office" placeholder="Nama fakulti, jabatan, atau pejabat di UMT"
+                  class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 focus:border-red-600">
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION C (FORM B): BUTIRAN GANGGUAN TERKINI & TERDAHULU -->
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+            <div class="flex items-center space-x-3 pb-4 border-b border-slate-100 mb-5">
+              <span class="w-8 h-8 rounded-lg bg-red-100 text-red-900 font-extrabold flex items-center justify-center text-sm border border-red-200">
+                C
+              </span>
+              <div>
+                <h3 class="font-bold text-slate-900 text-base">MAKLUMAT GANGGUAN SEKSUAL</h3>
+                <p class="text-xs text-slate-500">Details of Sexual Harassment Incident</p>
+              </div>
+            </div>
+
+            <!-- GANGGUAN TERKINI -->
+            <div class="p-4 bg-red-50/40 rounded-xl border border-red-100 mb-4">
+              <span class="block text-xs font-bold text-red-900 uppercase tracking-wider mb-2">
+                1. Gangguan Terkini (Recent Harassment) *
+              </span>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">Tarikh (Date) *</label>
+                  <input type="date" id="fb_recent_date" class="w-full text-xs p-2 rounded border border-slate-300">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">Masa (Time)</label>
+                  <input type="time" id="fb_recent_time" class="w-full text-xs p-2 rounded border border-slate-300">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">Tempat (Place) *</label>
+                  <input type="text" id="fb_recent_place" placeholder="Lokasi gangguan berlaku" class="w-full text-xs p-2 rounded border border-slate-300">
+                </div>
+              </div>
+            </div>
+
+            <!-- SEJARAH GANGGUAN TERDAHULU -->
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 mb-4">
+              <span class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                2. Sejarah Gangguan Terdahulu (History of Previous Harassment - Jika ada)
+              </span>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">Tarikh Terdahulu</label>
+                  <input type="date" id="fb_history_date" class="w-full text-xs p-2 rounded border border-slate-300">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">Masa Terdahulu</label>
+                  <input type="time" id="fb_history_time" class="w-full text-xs p-2 rounded border border-slate-300">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">Tempat Terdahulu</label>
+                  <input type="text" id="fb_history_place" placeholder="Lokasi gangguan terdahulu" class="w-full text-xs p-2 rounded border border-slate-300">
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                  Gangguan Yang Dilakukan (Harassment Made - Please explain) *
+                </label>
+                <textarea id="fb_harassment_details" rows="4" placeholder="Jelaskan perkataan, perlakuan fizikal, sentuhan, mesej, atau apa-apa bentuk gangguan..."
+                  class="w-full text-xs p-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 focus:border-red-600 leading-relaxed"></textarea>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                  Kesan Yang Dialami (Effect Occurred)
+                </label>
+                <textarea id="fb_effect" rows="3" placeholder="Kesan dari segi emosi, trauma, prestasi kerja, pelajaran, atau keselamatan diri..."
+                  class="w-full text-xs p-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 focus:border-red-600 leading-relaxed"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION D (FORM B): MAKLUMAT SAKSI (MAKSIMUM 3 ORANG) -->
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+            <div class="flex items-center space-x-3 pb-4 border-b border-slate-100 mb-5">
+              <span class="w-8 h-8 rounded-lg bg-red-100 text-red-900 font-extrabold flex items-center justify-center text-sm border border-red-200">
+                D
+              </span>
+              <div>
+                <h3 class="font-bold text-slate-900 text-base">MAKLUMAT SAKSI GANGGUAN (JIKA ADA)</h3>
+                <p class="text-xs text-slate-500">Witness Particulars (Maksimum 3 orang)</p>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-2 p-2 bg-slate-50 rounded-lg">
+                <input type="text" id="fb_witness1_name" placeholder="Nama Saksi 1" class="text-xs p-2 rounded border border-slate-300">
+                <input type="text" id="fb_witness1_occupation" placeholder="Jawatan / Pekerjaan" class="text-xs p-2 rounded border border-slate-300">
+                <input type="tel" id="fb_witness1_phone" placeholder="No. Telefon" class="text-xs p-2 rounded border border-slate-300">
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-2 p-2 bg-slate-50 rounded-lg">
+                <input type="text" id="fb_witness2_name" placeholder="Nama Saksi 2" class="text-xs p-2 rounded border border-slate-300">
+                <input type="text" id="fb_witness2_occupation" placeholder="Jawatan / Pekerjaan" class="text-xs p-2 rounded border border-slate-300">
+                <input type="tel" id="fb_witness2_phone" placeholder="No. Telefon" class="text-xs p-2 rounded border border-slate-300">
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-2 p-2 bg-slate-50 rounded-lg">
+                <input type="text" id="fb_witness3_name" placeholder="Nama Saksi 3" class="text-xs p-2 rounded border border-slate-300">
+                <input type="text" id="fb_witness3_occupation" placeholder="Jawatan / Pekerjaan" class="text-xs p-2 rounded border border-slate-300">
+                <input type="tel" id="fb_witness3_phone" placeholder="No. Telefon" class="text-xs p-2 rounded border border-slate-300">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+          <h3 class="font-bold text-slate-900 text-base mb-1">LAMPIRAN BUKTI & DOKUMEN SOKONGAN</h3>
+          <p class="text-xs text-slate-500 mb-4">Sila muat naik tangkap layar, fail PDF, rakaman atau dokumen sokongan (jika ada)</p>
+          
+          <div class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:bg-slate-50 transition cursor-pointer">
+            <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-400 mb-2"></i>
+            <p class="text-xs font-semibold text-slate-700">Pilih fail bukti atau seret ke sini</p>
+            <p class="text-[11px] text-slate-400 mt-1">Format yang diterima: PDF, PNG, JPG, DOCX (Maks 10MB setiap fail)</p>
+            <input type="file" id="file_attachment" class="hidden" onchange="handleFileSelected(this)">
+            <button type="button" onclick="document.getElementById('file_attachment').click()"
+              class="mt-3 px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-semibold rounded-lg transition">
+              <i class="fa-solid fa-folder-open mr-1"></i> Pilih Fail
+            </button>
+            <div id="fileUploadStatus" class="mt-2 text-xs font-semibold text-emerald-700 hidden"></div>
+          </div>
+        </div>
+
+        <!-- PERAKUAN (DECLARATION) -->
+        <div class="bg-amber-50/70 border border-amber-300 rounded-2xl p-6">
+          <div class="flex items-start gap-3">
+            <div class="mt-1 text-amber-600">
+              <i class="fa-solid fa-scale-balanced text-xl"></i>
+            </div>
+            <div class="space-y-3">
+              <h4 class="font-bold text-slate-900 text-sm">PERAKUAN (DECLARATION)</h4>
+              <p class="text-xs text-slate-700 leading-relaxed text-justify">
+                Saya mengaku bahawa semua maklumat yang diberikan dalam Borang ini adalah benar, tepat dan lengkap sepanjang pengetahuan, maklumat, kepercayaan saya dan saya lakukan dengan suci hati. 
+                <br><br>
+                Saya juga faham bahawa jika terdapat maklumat palsu, tidak benar atau tidak lengkap maka laporan ini akan terbatal dan saya boleh dikenakan tindakan tatatertib di bawah <strong>Peraturan 3(2)(f), 3(2)(g) dan 3(2)(j) Akta Badan-Badan Berkanun (Tatatertib dan Surcaj) 2000</strong>.
+                <br><br>
+                Saya dengan ini bersetuju bahawa segala maklumat yang diberikan boleh digunakan dan diproses dengan tujuan tindakan lanjut dan boleh dipanjangkan kepada jabatan / pihak berkuasa / agensi penguatkuasaan.
+              </p>
+              
+              <label class="flex items-center gap-3 pt-2 cursor-pointer select-none">
+                <input type="checkbox" id="declaration_check" required class="w-4 h-4 text-umt-navy rounded border-slate-300 focus:ring-umt-navy">
+                <span class="text-xs font-bold text-slate-900">
+                  Saya faham dan bersetuju dengan perakuan di atas. *
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- BUTANG HANTAR -->
+        <div class="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
+          <button type="reset" class="w-full sm:w-auto px-5 py-3 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-100 transition">
+            Padam Semula
+          </button>
+          <button type="submit" class="w-full sm:w-auto px-8 py-3 rounded-xl bg-umt-navy hover:bg-blue-950 text-white text-xs font-extrabold tracking-wide shadow-lg transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-paper-plane"></i>
+            HANTAR ADUAN KEPADA UMT
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 2: PANEL PENTADBIRAN / ADMIN                                         -->
+    <!-- ========================================================================= -->
+    <div id="viewAdmin" class="space-y-6 hidden">
+      
+      <!-- Top Overview Stats -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Card 1: Menunggu Saringan -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+          <div>
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Menunggu Saringan</span>
+            <h3 id="statPending" class="text-2xl font-black text-amber-600 mt-1">0</h3>
+            <span class="text-[11px] text-slate-400">Belum didaftar No. Rekod</span>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-inbox"></i>
+          </div>
+        </div>
+
+        <!-- Card 2: Didaftar & Siasatan -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+          <div>
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Sedang Diproses</span>
+            <h3 id="statProcessing" class="text-2xl font-black text-blue-600 mt-1">0</h3>
+            <span class="text-[11px] text-slate-400">Dalam tindakan pegawai</span>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </div>
+        </div>
+
+        <!-- Card 3: Selesai -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+          <div>
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Selesai</span>
+            <h3 id="statResolved" class="text-2xl font-black text-emerald-600 mt-1">0</h3>
+            <span class="text-[11px] text-slate-400">Keputusan telah dihantar</span>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+        </div>
+
+        <!-- Card 4: Jumlah Keseluruhan -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+          <div>
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Jumlah Aduan</span>
+            <h3 id="statTotal" class="text-2xl font-black text-slate-800 mt-1">0</h3>
+            <span class="text-[11px] text-slate-400">Termasuk Form A & B</span>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-folder-closed"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        
+        <!-- Table Toolbar -->
+        <div class="p-4 sm:p-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Senarai Pengurusan Aduan Masuk</h2>
+            <p class="text-xs text-slate-500">Pendaftaran Nombor Rekod Manual (Format: XXX/YY/ZZZZ), Agihan Siasatan & Keputusan Rasmi</p>
+          </div>
+
+          <!-- Status Filter Tabs -->
+          <div class="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-xl text-xs font-bold">
+            <button onclick="filterComplaints('ALL')" id="filterBtnALL" class="px-3 py-1.5 rounded-lg bg-white shadow-sm text-slate-800">
+              Semua
+            </button>
+            <button onclick="filterComplaints('PENDING')" id="filterBtnPENDING" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900">
+              Menunggu Saringan
+            </button>
+            <button onclick="filterComplaints('REGISTERED')" id="filterBtnREGISTERED" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900">
+              Didaftar
+            </button>
+            <button onclick="filterComplaints('RESOLVED')" id="filterBtnRESOLVED" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900">
+              Selesai
+            </button>
+            <button onclick="filterComplaints('REJECTED')" id="filterBtnREJECTED" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900">
+              Ditolak (Spam)
+            </button>
+          </div>
+        </div>
+
+        <!-- Table Data -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-slate-50/80 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-200">
+                <th class="py-3.5 px-4">No. Rekod</th>
+                <th class="py-3.5 px-4">Kategori / Borang</th>
+                <th class="py-3.5 px-4">Nama Pengadu</th>
+                <th class="py-3.5 px-4">Tarikh Diterima</th>
+                <th class="py-3.5 px-4">Status</th>
+                <th class="py-3.5 px-4 text-right">Tindakan</th>
+              </tr>
+            </thead>
+            <tbody id="complaintsTableBody" class="divide-y divide-slate-100 text-slate-700">
+              <!-- Rendered via JavaScript -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="emptyTableState" class="hidden p-8 text-center text-slate-400 text-xs">
+          <i class="fa-regular fa-folder-open text-3xl mb-2 block"></i>
+          Tiada rekod aduan dalam kategori ini.
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="complaintDetailModal" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[92vh] flex flex-col border border-slate-200 overflow-hidden animate-fadeIn">
+      
+      <!-- Modal Header -->
+      <div class="p-5 bg-umt-navy text-white flex items-center justify-between border-b border-umt-gold/30">
+        <div>
+          <div class="flex items-center gap-2">
+            <span id="modalFormBadge" class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider"></span>
+            <span id="modalRecordNoBadge" class="text-xs font-mono font-bold text-amber-300"></span>
+          </div>
+          <h3 id="modalComplainantName" class="text-lg font-bold text-white mt-1"></h3>
+        </div>
+        <button onclick="closeDetailModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body Content -->
+      <div class="p-6 overflow-y-auto space-y-6 text-xs text-slate-700">
+        
+        <!-- Status & Meta Bar -->
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span class="text-slate-400">Status Semasa:</span>
+            <span id="modalStatusBadge" class="ml-1 font-bold"></span>
+          </div>
+          <div>
+            <span class="text-slate-400">Tarikh Kemasukan:</span>
+            <span id="modalSubmittedDate" class="ml-1 font-semibold text-slate-800"></span>
+          </div>
+        </div>
+
+        <!-- Section: Butiran Pengadu -->
+        <div>
+          <h4 class="font-bold text-slate-900 uppercase tracking-wider text-xs mb-2 pb-1 border-b border-slate-200">
+            A. Butiran Pengadu (Complainant Particulars)
+          </h4>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-50/50 p-3 rounded-xl border border-slate-100">
+            <div><span class="text-slate-400 block">Kategori:</span> <span id="m_category" class="font-semibold"></span></div>
+            <div><span class="text-slate-400 block">No. IC/Staf:</span> <span id="m_ic" class="font-semibold"></span></div>
+            <div><span class="text-slate-400 block">Warganegara / Bangsa:</span> <span id="m_nationality_race" class="font-semibold"></span></div>
+            <div><span class="text-slate-400 block">Jawatan:</span> <span id="m_occupation" class="font-semibold"></span></div>
+            <div><span class="text-slate-400 block">No. Tel:</span> <span id="m_phone" class="font-semibold"></span></div>
+            <div><span class="text-slate-400 block">E-mel:</span> <span id="m_email" class="font-semibold text-blue-700"></span></div>
+          </div>
+        </div>
+
+        <!-- Section: Dynamic Case Details -->
+        <div id="modalDynamicCaseDetails"></div>
+
+        <!-- Section: Saksi & Bukti -->
+        <div id="modalWitnessEvidenceDetails"></div>
+
+        <!-- PANEL TINDAKAN 1: UNTUK STATUS PENDING (INPUT NO REKOD MANUAL) -->
+        <div id="adminActionPendingPanel" class="p-5 bg-amber-50/80 rounded-2xl border border-amber-300 space-y-3">
+          <div class="flex items-center gap-2 text-amber-900 font-bold">
+            <i class="fa-solid fa-stamp text-base"></i>
+            <span>Tindakan Urus Setia: Pendaftaran Nombor Rekod Aduan</span>
+          </div>
+          <p class="text-xs text-amber-800 leading-relaxed">
+            Format wajib: <strong>XXX/YY/ZZZZ</strong> (Contoh: <code class="bg-amber-100 px-1 py-0.5 rounded font-mono">015/08/2026</code> di mana 015 = bilangan aduan terkini, 08 = bulan penerimaan, 2026 = tahun semasa).
+          </p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 mb-1">
+                Masukkan No. Rekod Rasmi Manual *
+              </label>
+              <input type="text" id="inputManualRecordNo" placeholder="Contoh: 001/10/2026"
+                class="w-full text-xs font-mono font-bold p-2.5 rounded-lg border border-amber-400 bg-white focus:ring-2 focus:ring-amber-500 uppercase">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 mb-1">
+                Pegawai Penerima Aduan *
+              </label>
+              <input type="text" id="inputOfficerName" value="Pn. Nor Azira (Unit Integriti)"
+                class="w-full text-xs p-2.5 rounded-lg border border-amber-400 bg-white focus:ring-2 focus:ring-amber-500">
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-2 border-t border-amber-200">
+            <button type="button" onclick="handleRejectComplaint()"
+              class="px-4 py-2 rounded-xl bg-red-100 hover:bg-red-200 text-red-800 font-bold transition flex items-center gap-1.5">
+              <i class="fa-solid fa-ban"></i>
+              Tolak Aduan (Spam/Palsu - Tiada E-mel)
+            </button>
+            <button type="button" onclick="handleRegisterComplaint()"
+              class="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold transition shadow flex items-center gap-2">
+              <i class="fa-solid fa-check"></i>
+              Daftar & Hantar Notifikasi Penerimaan
+            </button>
+          </div>
+        </div>
+
+        <!-- PANEL TINDAKAN 2: UNTUK STATUS REGISTERED / INVESTIGATING (SELESAIKAN ADUAN) -->
+        <div id="adminActionResolutionPanel" class="p-5 bg-blue-50/80 rounded-2xl border border-blue-300 space-y-3 hidden">
+          <div class="flex items-center gap-2 text-blue-950 font-bold">
+            <i class="fa-solid fa-gavel text-base"></i>
+            <span>Tindakan Siasatan & Keputusan Rasmi</span>
+          </div>
+          <p class="text-xs text-blue-900">
+            Masukkan ringkasan penyiasatan dan keputusan rasmi. Setelah disimpan, sistem akan menghantar e-mel pemakluman keputusan rasmi secara automatik kepada pengadu.
+          </p>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 mb-1">
+              Keterangan Keputusan / Tindakan Rasmi *
+            </label>
+            <textarea id="inputResolutionText" rows="4" placeholder="Nyatakan keputusan jawatankuasa/unit berkaitan dan tindakan yang telah diambil..."
+              class="w-full text-xs p-3 rounded-lg border border-blue-300 bg-white focus:ring-2 focus:ring-blue-600 leading-relaxed"></textarea>
+          </div>
+
+          <div class="flex items-center justify-end pt-1">
+            <button type="button" onclick="handleResolveComplaint()"
+              class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition shadow flex items-center gap-2">
+              <i class="fa-solid fa-paper-plane"></i>
+              Selesaikan Aduan & Hantar E-mel Keputusan
+            </button>
+          </div>
+        </div>
+
+        <!-- PANEL MAKLUMAT KEPUTUSAN JIKA SUDAH SELESAI -->
+        <div id="adminCompletedDetailsPanel" class="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 hidden space-y-2">
+          <div class="flex items-center gap-2 text-emerald-800 font-bold">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Aduan Ini Telah Diselesaikan</span>
+          </div>
+          <p id="resolvedTextDisplay" class="text-xs text-emerald-950 bg-white p-3 rounded-xl border border-emerald-200 whitespace-pre-line"></p>
+          <span id="resolvedDateDisplay" class="text-[11px] text-emerald-700 font-medium block"></span>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+        <button onclick="closeDetailModal()" class="px-5 py-2 bg-slate-200 hover:bg-slate-300 font-bold rounded-xl text-slate-700 transition">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="emailSimulationDrawer" class="fixed inset-y-0 right-0 z-50 w-full sm:w-[480px] bg-slate-900 text-white shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col border-l border-slate-800">
+    <!-- Drawer Header -->
+    <div class="p-5 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-8 h-8 rounded-lg bg-amber-400 text-slate-950 flex items-center justify-center font-bold text-sm">
+          <i class="fa-solid fa-envelope"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-sm text-white">Simulator Log E-mel UMT</h3>
+          <p class="text-[11px] text-slate-400">Notifikasi automatik dihantar ke e-mel pengadu</p>
+        </div>
+      </div>
+      <button onclick="toggleEmailDrawer()" class="text-slate-400 hover:text-white p-1">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
+
+    <!-- Drawer Body -->
+    <div id="emailLogContainer" class="p-4 flex-grow overflow-y-auto space-y-4 text-xs font-sans">
+      <!-- Empty state initially or dynamically populated -->
+      <div id="emailEmptyMessage" class="h-full flex flex-col items-center justify-center text-slate-500 py-12 text-center">
+        <i class="fa-solid fa-inbox text-4xl mb-3 opacity-30"></i>
+        <p class="font-medium">Belum ada e-mel automatik dijana.</p>
+        <p class="text-[11px] text-slate-600 max-w-xs mt-1">
+          E-mel 1 akan dijana apabila Admin memasukkan No. Rekod Manual. E-mel 2 dijana apabila aduan diselesaikan.
+        </p>
+      </div>
+    </div>
+
+    <!-- Drawer Footer -->
+    <div class="p-3 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+      <span>Status Penghantaran: Terkini</span>
+      <button onclick="clearEmailLogs()" class="hover:text-amber-400 underline">Kosongkan Log</button>
+    </div>
+  </div>
+
+  <div id="toastNotification" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="bg-slate-900 text-white border border-slate-700 px-4 py-3 rounded-2xl shadow-2xl flex items-center space-x-3 text-xs">
+      <span id="toastIcon" class="text-emerald-400 text-base"></span>
+      <span id="toastMessage" class="font-medium"></span>
+    </div>
+  </div>
+
+  <script>
+    // In-memory complaints state with preset dummy data to immediately test the workflow
+    let complaints = [
+      {
+        id: "c-101",
+        record_no: null, // PENDING review
+        complaint_type: "FORM_A",
+        status: "PENDING",
+        submitted_at: "2026-10-04 09:30:00",
+        complainant_category: "UMT_STAFF",
+        full_name: "Zulkifli bin Harun",
+        ic_no: "880315-11-5521",
+        nationality: "Warganegara Malaysia",
+        race: "Melayu",
+        age: 38,
+        occupation: "Penolong Jurutera JA29",
+        phone_no: "013-9112233",
+        email: "zulkifli@umt.edu.my",
+        suitable_time: "Petang (2.30 - 4.30)",
+        form_a: {
+          staff_name: "Ahmad Fakhrul",
+          staff_position: "Pegawai Eksekutif Kanan",
+          how_know: "Rakan sekerja di Pejabat Pembangunan Fasiliti",
+          incident_date: "2026-09-28",
+          incident_time: "11:15",
+          incident_place: "Pejabat Pembangunan Fasiliti UMT",
+          details: "Tuntutan pembekalan bahan binaan tidak sepadan dengan inventori fizikal tapak projek.",
+          witness1: { name: "Razali Othman", occupation: "Juruteknik", phone: "019-9887766" },
+          witness2: { name: "", occupation: "", phone: "" },
+          reported_before: "NO"
+        },
+        evidence_file: "invois_pembekalan.pdf",
+        received_by: null,
+        received_date: null,
+        resolution: null,
+        resolution_date: null
+      },
+      {
+        id: "c-102",
+        record_no: "014/09/2026",
+        complaint_type: "FORM_B",
+        status: "REGISTERED",
+        submitted_at: "2026-09-29 14:15:00",
+        complainant_category: "UMT_STUDENT",
+        full_name: "Nurul Hidayah",
+        ic_no: "030722-11-0988",
+        nationality: "Warganegara Malaysia",
+        race: "Melayu",
+        age: 23,
+        occupation: "Pelajar Ijazah Sarjana Muda",
+        phone_no: "011-23456789",
+        email: "s59871@pps.umt.edu.my",
+        suitable_time: "Sebarang masa melalui WhatsApp",
+        form_b: {
+          suspect_name: "Dr. Roslan",
+          suspect_grade: "Pensyarah Kanan DS51",
+          suspect_office: "Bilik Pensyarah Fakulti Pengajian Maritim",
+          recent_date: "2026-09-25",
+          recent_time: "16:45",
+          recent_place: "Bilik Perbincangan Aras 2 FPM",
+          history_date: "2026-09-10",
+          history_time: "15:00",
+          history_place: "Makmal Simulasi",
+          harassment_details: "Komen tidak wajar berunsur seksual secara peribadi semasa sesi konsultasi tesis dan sentuhan fizikal yang tidak dipersetujui.",
+          effect: "Tekanan emosi, takut untuk menghadiri kelas bimbingan fakulti.",
+          witnesses: [
+            { name: "Farah Nadia", occupation: "Pelajar FPM", phone: "017-9123456" }
+          ]
+        },
+        evidence_file: "screenshot_chat_whatsapp.png",
+        received_by: "Pn. Nor Azira (Unit Integriti)",
+        received_date: "2026-09-29 16:00:00",
+        resolution: null,
+        resolution_date: null
+      }
+    ];
+
+    let emailLogs = [];
+    let activeFilter = 'ALL';
+    let currentSelectedComplaint = null;
+    let selectedFileMockName = null;
+
+    function switchView(viewName) {
+      const publicView = document.getElementById('viewPublic');
+      const adminView = document.getElementById('viewAdmin');
+      const btnPublic = document.getElementById('btnRolePublic');
+      const btnAdmin = document.getElementById('btnRoleAdmin');
+
+      if (viewName === 'public') {
+        publicView.classList.remove('hidden');
+        adminView.classList.add('hidden');
+        btnPublic.className = 'px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 bg-umt-gold text-slate-950 shadow-sm';
+        btnAdmin.className = 'px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 text-slate-300 hover:text-white';
+      } else {
+        publicView.classList.add('hidden');
+        adminView.classList.remove('hidden');
+        btnAdmin.className = 'px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 bg-umt-gold text-slate-950 shadow-sm';
+        btnPublic.className = 'px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 text-slate-300 hover:text-white';
+        renderAdminDashboard();
+      }
+    }
+
+    function setComplaintType(type) {
+      const wrapperA = document.getElementById('wrapperFormA');
+      const wrapperB = document.getElementById('wrapperFormB');
+      const labelA = document.getElementById('labelOptionFormA');
+      const labelB = document.getElementById('labelOptionFormB');
+
+      if (type === 'FORM_A') {
+        wrapperA.classList.remove('hidden');
+        wrapperB.classList.add('hidden');
+        labelA.classList.add('border-umt-navy', 'bg-blue-50/30');
+        labelA.classList.remove('border-slate-200');
+        labelB.classList.remove('border-red-600', 'bg-red-50/30');
+        labelB.classList.add('border-slate-200');
+      } else {
+        wrapperA.classList.add('hidden');
+        wrapperB.classList.remove('hidden');
+        labelB.classList.add('border-red-600', 'bg-red-50/30');
+        labelB.classList.remove('border-slate-200');
+        labelA.classList.remove('border-umt-navy', 'bg-blue-50/30');
+        labelA.classList.add('border-slate-200');
+      }
+    }
+
+    function toggleComplainantCategory() {
+      const cat = document.getElementById('complainant_category').value;
+      const label = document.getElementById('labelIcNo');
+      if (cat === 'UMT_STAFF') {
+        label.innerText = 'No. Kad Pengenalan / No. Staf UMT *';
+      } else if (cat === 'UMT_STUDENT') {
+        label.innerText = 'No. Kad Pengenalan / No. Matrik Pelajar *';
+      } else {
+        label.innerText = 'No. Kad Pengenalan / No. Paspot (Awam) *';
+      }
+    }
+
+    function toggleExternalReport(isYes) {
+      const box = document.getElementById('fa_external_report_box');
+      if (isYes) {
+        box.classList.remove('hidden');
+      } else {
+        box.classList.add('hidden');
+      }
+    }
+
+    function handleFileSelected(input) {
+      if (input.files && input.files[0]) {
+        selectedFileMockName = input.files[0].name;
+        const statusEl = document.getElementById('fileUploadStatus');
+        statusEl.innerText = `Fail dipilih: ${selectedFileMockName} (${(input.files[0].size / 1024).toFixed(1)} KB)`;
+        statusEl.classList.remove('hidden');
+      }
+    }
+
+    function handleComplaintSubmit(event) {
+      event.preventDefault();
+
+      const complaintType = document.querySelector('input[name="radioFormType"]:checked').value;
+      const fullName = document.getElementById('full_name').value.trim();
+      const email = document.getElementById('email').value.trim();
+
+      // Basic validation
+      if (!fullName || !email) {
+        showToast('Sila lengkapkan maklumat wajib pengadu.', 'error');
+        return;
+      }
+
+      // Prepare complaint object
+      const now = new Date();
+      const submittedDateStr = now.toISOString().replace('T', ' ').substring(0, 19);
+
+      let newComplaint = {
+        id: "c-" + Date.now(),
+        record_no: null, // As per rule: Admin records this manually!
+        complaint_type: complaintType,
+        status: "PENDING",
+        submitted_at: submittedDateStr,
+        complainant_category: document.getElementById('complainant_category').value,
+        full_name: fullName,
+        ic_no: document.getElementById('ic_no').value.trim(),
+        nationality: document.getElementById('nationality').value.trim(),
+        race: document.getElementById('race').value.trim(),
+        age: parseInt(document.getElementById('age').value) || null,
+        occupation: document.getElementById('occupation').value.trim(),
+        phone_no: document.getElementById('phone_no').value.trim(),
+        email: email,
+        suitable_time: document.getElementById('suitable_time').value.trim(),
+        evidence_file: selectedFileMockName || "tiada_lampiran",
+        received_by: null,
+        received_date: null,
+        resolution: null,
+        resolution_date: null
+      };
+
+      if (complaintType === 'FORM_A') {
+        newComplaint.form_a = {
+          staff_name: document.getElementById('fa_staff_name').value.trim(),
+          staff_position: document.getElementById('fa_staff_position').value.trim(),
+          how_know: document.getElementById('fa_how_know').value.trim(),
+          incident_date: document.getElementById('fa_incident_date').value,
+          incident_time: document.getElementById('fa_incident_time').value,
+          incident_place: document.getElementById('fa_incident_place').value.trim(),
+          details: document.getElementById('fa_details').value.trim(),
+          witness1: {
+            name: document.getElementById('fa_witness1_name').value.trim(),
+            occupation: document.getElementById('fa_witness1_occupation').value.trim(),
+            phone: document.getElementById('fa_witness1_phone').value.trim()
+          },
+          witness2: {
+            name: document.getElementById('fa_witness2_name').value.trim(),
+            occupation: document.getElementById('fa_witness2_occupation').value.trim(),
+            phone: document.getElementById('fa_witness2_phone').value.trim()
+          },
+          reported_before: document.querySelector('input[name="fa_reported_before"]:checked').value
+        };
+      } else {
+        newComplaint.form_b = {
+          suspect_name: document.getElementById('fb_suspect_name').value.trim(),
+          suspect_grade: document.getElementById('fb_suspect_grade').value.trim(),
+          suspect_office: document.getElementById('fb_suspect_office').value.trim(),
+          recent_date: document.getElementById('fb_recent_date').value,
+          recent_time: document.getElementById('fb_recent_time').value,
+          recent_place: document.getElementById('fb_recent_place').value.trim(),
+          history_date: document.getElementById('fb_history_date').value,
+          history_time: document.getElementById('fb_history_time').value,
+          history_place: document.getElementById('fb_history_place').value.trim(),
+          harassment_details: document.getElementById('fb_harassment_details').value.trim(),
+          effect: document.getElementById('fb_effect').value.trim(),
+          witnesses: [
+            {
+              name: document.getElementById('fb_witness1_name').value.trim(),
+              occupation: document.getElementById('fb_witness1_occupation').value.trim(),
+              phone: document.getElementById('fb_witness1_phone').value.trim()
+            },
+            {
+              name: document.getElementById('fb_witness2_name').value.trim(),
+              occupation: document.getElementById('fb_witness2_occupation').value.trim(),
+              phone: document.getElementById('fb_witness2_phone').value.trim()
+            }
+          ]
+        };
+      }
+
+      complaints.unshift(newComplaint);
+      document.getElementById('complaintSubmissionForm').reset();
+      selectedFileMockName = null;
+      document.getElementById('fileUploadStatus').classList.add('hidden');
+
+      showToast("Aduan berjaya dihantar! Sila tunggu semakan Urus Setia UMT.", "success");
+      updatePendingBadge();
+
+      // Show confirmation dialog info
+      showCustomSubmissionDialog(newComplaint);
+    }
+
+    // Modal informing user about the submission state without native alert
+    function showCustomSubmissionDialog(item) {
+      const typeText = item.complaint_type === 'FORM_A' ? 'Borang A (Salah Laku)' : 'Borang B (Gangguan Seksual)';
+      const msg = `
+        Aduan anda bagi <strong>${typeText}</strong> telah selamat diterima ke dalam sistem pangkalan data UMT.<br><br>
+        <strong>Peringatan Aliran Sistem:</strong><br>
+        Nombor aduan tidak dijana serta-merta. Urus setia integriti akan menyaring aduan ini dan mendaftarkan No. Rekod secara manual.<br><br>
+        Notifikasi rasmi penerimaan akan dihantar ke e-mel: <strong>${item.email}</strong>.
+      `;
+      // Open a custom message modal
+      const modal = document.createElement('div');
+      modal.className = "fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4";
+      modal.innerHTML = `
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 text-center space-y-4 shadow-2xl border border-slate-200">
+          <div class="w-14 h-14 bg-blue-100 text-umt-navy rounded-full mx-auto flex items-center justify-center text-2xl">
+            <i class="fa-solid fa-envelope-circle-check"></i>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900">Aduan Diterima Untuk Saringan</h3>
+          <p class="text-xs text-slate-600 text-left bg-slate-50 p-4 rounded-xl leading-relaxed">${msg}</p>
+          <div class="flex gap-2">
+            <button onclick="this.closest('.fixed').remove()" class="flex-1 py-2.5 bg-slate-200 hover:bg-slate-300 font-bold text-xs rounded-xl text-slate-800">
+              Kembali ke Laman Utama
+            </button>
+            <button onclick="this.closest('.fixed').remove(); switchView('admin');" class="flex-1 py-2.5 bg-umt-navy hover:bg-blue-950 font-bold text-xs rounded-xl text-white">
+              Buka Panel Urus Setia
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    function renderAdminDashboard() {
+      const pendingCount = complaints.filter(c => c.status === 'PENDING').length;
+      const processingCount = complaints.filter(c => c.status === 'REGISTERED' || c.status === 'INVESTIGATING').length;
+      const resolvedCount = complaints.filter(c => c.status === 'RESOLVED').length;
+      const totalCount = complaints.length;
+
+      document.getElementById('statPending').innerText = pendingCount;
+      document.getElementById('statProcessing').innerText = processingCount;
+      document.getElementById('statResolved').innerText = resolvedCount;
+      document.getElementById('statTotal').innerText = totalCount;
+      
+      updatePendingBadge();
+      renderComplaintsTable();
+    }
+
+    function updatePendingBadge() {
+      const pendingCount = complaints.filter(c => c.status === 'PENDING').length;
+      const badge = document.getElementById('pendingCounterBadge');
+      if (pendingCount > 0) {
+        badge.innerText = pendingCount;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function filterComplaints(status) {
+      activeFilter = status;
+      ['ALL', 'PENDING', 'REGISTERED', 'RESOLVED', 'REJECTED'].forEach(st => {
+        const btn = document.getElementById('filterBtn' + st);
+        if (st === status) {
+          btn.className = 'px-3 py-1.5 rounded-lg bg-white shadow-sm text-slate-900 font-bold';
+        } else {
+          btn.className = 'px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 font-medium';
+        }
+      });
+      renderComplaintsTable();
+    }
+
+    function renderComplaintsTable() {
+      const tbody = document.getElementById('complaintsTableBody');
+      const emptyEl = document.getElementById('emptyTableState');
+      tbody.innerHTML = '';
+
+      let filtered = complaints;
+      if (activeFilter !== 'ALL') {
+        filtered = complaints.filter(c => c.status === activeFilter);
+      }
+
+      if (filtered.length === 0) {
+        emptyEl.classList.remove('hidden');
+        return;
+      } else {
+        emptyEl.classList.add('hidden');
+      }
+
+      filtered.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50/80 transition cursor-pointer";
+        tr.onclick = (e) => {
+          if (!e.target.closest('button')) {
+            openDetailModal(item.id);
+          }
+        };
+
+        // Record No representation
+        const recordDisplay = item.record_no 
+          ? `<span class="font-mono font-bold text-umt-navy bg-blue-50 px-2 py-0.5 rounded border border-blue-200">${item.record_no}</span>`
+          : `<span class="italic text-slate-400 font-medium text-[11px]"><i class="fa-solid fa-clock mr-1"></i>Belum Direkod</span>`;
+
+        // Form Type badge
+        const formTypeBadge = item.complaint_type === 'FORM_A'
+          ? `<span class="bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded text-[10px]"><i class="fa-solid fa-file-shield mr-1"></i>FORM A (Salah Laku)</span>`
+          : `<span class="bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded text-[10px]"><i class="fa-solid fa-shield-cat mr-1"></i>FORM B (Gangguan Seksual)</span>`;
+
+        // Status badge
+        let statusBadge = '';
+        if (item.status === 'PENDING') {
+          statusBadge = `<span class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full text-[10px] badge-pulse">Menunggu Saringan</span>`;
+        } else if (item.status === 'REGISTERED') {
+          statusBadge = `<span class="bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full text-[10px]">Didaftar</span>`;
+        } else if (item.status === 'RESOLVED') {
+          statusBadge = `<span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full text-[10px]">Selesai</span>`;
+        } else if (item.status === 'REJECTED') {
+          statusBadge = `<span class="bg-slate-200 text-slate-600 font-bold px-2 py-0.5 rounded-full text-[10px]">Ditolak (Spam)</span>`;
+        }
+
+        tr.innerHTML = `
+          <td class="py-3 px-4">${recordDisplay}</td>
+          <td class="py-3 px-4">${formTypeBadge}</td>
+          <td class="py-3 px-4">
+            <div class="font-bold text-slate-900">${item.full_name}</div>
+            <div class="text-[11px] text-slate-400">${item.email}</div>
+          </td>
+          <td class="py-3 px-4 text-slate-600">${item.submitted_at.substring(0, 10)}</td>
+          <td class="py-3 px-4">${statusBadge}</td>
+          <td class="py-3 px-4 text-right">
+            <button onclick="openDetailModal('${item.id}')" 
+              class="px-3 py-1.5 bg-slate-100 hover:bg-umt-navy hover:text-white rounded-lg font-bold text-[11px] transition">
+              Semak Butiran
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openDetailModal(complaintId) {
+      currentSelectedComplaint = complaints.find(c => c.id === complaintId);
+      if (!currentSelectedComplaint) return;
+
+      const c = currentSelectedComplaint;
+      const modal = document.getElementById('complaintDetailModal');
+
+      // Populate Headings
+      const formBadge = document.getElementById('modalFormBadge');
+      if (c.complaint_type === 'FORM_A') {
+        formBadge.innerText = 'FORM A (SALAH LAKU)';
+        formBadge.className = 'px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-900';
+      } else {
+        formBadge.innerText = 'FORM B (GANGGUAN SEKSUAL)';
+        formBadge.className = 'px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-red-100 text-red-900';
+      }
+
+      document.getElementById('modalRecordNoBadge').innerText = c.record_no ? `NO. REKOD: ${c.record_no}` : 'NO. REKOD: BELUM DIDAFTAR';
+      document.getElementById('modalComplainantName').innerText = c.full_name;
+      document.getElementById('modalSubmittedDate').innerText = c.submitted_at;
+      document.getElementById('modalStatusBadge').innerText = c.status;
+
+      // Section A fields
+      document.getElementById('m_category').innerText = c.complainant_category;
+      document.getElementById('m_ic').innerText = c.ic_no;
+      document.getElementById('m_nationality_race').innerText = `${c.nationality} / ${c.race || '-'}`;
+      document.getElementById('m_occupation').innerText = c.occupation;
+      document.getElementById('m_phone').innerText = c.phone_no;
+      document.getElementById('m_email').innerText = c.email;
+
+      // Dynamic Case Details
+      const caseContainer = document.getElementById('modalDynamicCaseDetails');
+      if (c.complaint_type === 'FORM_A') {
+        caseContainer.innerHTML = `
+          <h4 class="font-bold text-slate-900 uppercase tracking-wider text-xs mb-2 pb-1 border-b border-slate-200">
+            B & C. Butiran Salah Laku Staf UMT (Form A)
+          </h4>
+          <div class="space-y-3 bg-slate-50/70 p-4 rounded-xl border border-slate-200">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div><span class="text-slate-400 block">Staf Terlibat:</span> <strong class="text-slate-800">${c.form_a.staff_name}</strong></div>
+              <div><span class="text-slate-400 block">Jawatan:</span> <span>${c.form_a.staff_position || '-'}</span></div>
+              <div><span class="text-slate-400 block">Hubungan:</span> <span>${c.form_a.how_know || '-'}</span></div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-slate-200/60">
+              <div><span class="text-slate-400 block">Tarikh Kejadian:</span> <span>${c.form_a.incident_date || '-'}</span></div>
+              <div><span class="text-slate-400 block">Masa:</span> <span>${c.form_a.incident_time || '-'}</span></div>
+              <div><span class="text-slate-400 block">Tempat:</span> <span>${c.form_a.incident_place || '-'}</span></div>
+            </div>
+            <div class="pt-2 border-t border-slate-200/60">
+              <span class="text-slate-400 block mb-1">Perincian Dakwaan Salah Laku:</span>
+              <p class="bg-white p-3 rounded-lg border border-slate-200 text-slate-800 whitespace-pre-line leading-relaxed">${c.form_a.details}</p>
+            </div>
+          </div>
+        `;
+      } else {
+        caseContainer.innerHTML = `
+          <h4 class="font-bold text-slate-900 uppercase tracking-wider text-xs mb-2 pb-1 border-b border-slate-200">
+            B & C. Butiran Pegawai & Gangguan Seksual (Form B)
+          </h4>
+          <div class="space-y-3 bg-slate-50/70 p-4 rounded-xl border border-slate-200">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div><span class="text-slate-400 block">Pegawai Disyaki:</span> <strong class="text-red-900">${c.form_b.suspect_name}</strong></div>
+              <div><span class="text-slate-400 block">Jawatan & Gred:</span> <span>${c.form_b.suspect_grade || '-'}</span></div>
+              <div><span class="text-slate-400 block">Alamat Pejabat:</span> <span>${c.form_b.suspect_office || '-'}</span></div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-slate-200/60">
+              <div><span class="text-slate-400 block">Tarikh Terkini:</span> <span>${c.form_b.recent_date || '-'}</span></div>
+              <div><span class="text-slate-400 block">Masa:</span> <span>${c.form_b.recent_time || '-'}</span></div>
+              <div><span class="text-slate-400 block">Tempat Terkini:</span> <span>${c.form_b.recent_place || '-'}</span></div>
+            </div>
+            <div class="pt-2 border-t border-slate-200/60">
+              <span class="text-slate-400 block mb-1">Perincian Gangguan Yang Berlaku:</span>
+              <p class="bg-white p-3 rounded-lg border border-slate-200 text-slate-800 whitespace-pre-line leading-relaxed">${c.form_b.harassment_details}</p>
+            </div>
+            ${c.form_b.effect ? `
+              <div class="pt-2">
+                <span class="text-slate-400 block mb-1">Kesan Yang Dialami:</span>
+                <p class="bg-red-50/60 p-2.5 rounded-lg border border-red-200 text-red-900 text-xs">${c.form_b.effect}</p>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      // Evidence & Witness
+      const witnessEvidence = document.getElementById('modalWitnessEvidenceDetails');
+      witnessEvidence.innerHTML = `
+        <h4 class="font-bold text-slate-900 uppercase tracking-wider text-xs mb-2 pb-1 border-b border-slate-200">
+          D. Dokumen Lampiran Bukti
+        </h4>
+        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 mb-3">
+          <i class="fa-solid fa-file-lines text-2xl text-slate-400"></i>
+          <div>
+            <span class="font-bold text-slate-800 block">${c.evidence_file}</span>
+            <span class="text-[11px] text-slate-400">Dimuat naik oleh pengadu semasa penyerahan</span>
+          </div>
+        </div>
+      `;
+
+      // Panel Visibility based on status
+      const pendingPanel = document.getElementById('adminActionPendingPanel');
+      const resolutionPanel = document.getElementById('adminActionResolutionPanel');
+      const completedPanel = document.getElementById('adminCompletedDetailsPanel');
+
+      pendingPanel.classList.add('hidden');
+      resolutionPanel.classList.add('hidden');
+      completedPanel.classList.add('hidden');
+
+      if (c.status === 'PENDING') {
+        pendingPanel.classList.remove('hidden');
+        // Preset sample recommendation format: XXX/YY/2026
+        const curMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+        const curYear = new Date().getFullYear();
+        document.getElementById('inputManualRecordNo').placeholder = `Contoh: 016/${curMonth}/${curYear}`;
+        document.getElementById('inputManualRecordNo').value = '';
+      } else if (c.status === 'REGISTERED' || c.status === 'INVESTIGATING') {
+        resolutionPanel.classList.remove('hidden');
+        document.getElementById('inputResolutionText').value = '';
+      } else if (c.status === 'RESOLVED') {
+        completedPanel.classList.remove('hidden');
+        document.getElementById('resolvedTextDisplay').innerText = c.resolution;
+        document.getElementById('resolvedDateDisplay').innerText = `Diselesaikan pada: ${c.resolution_date} oleh ${c.received_by}`;
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeDetailModal() {
+      document.getElementById('complaintDetailModal').classList.add('hidden');
+    }
+
+    function handleRegisterComplaint() {
+      if (!currentSelectedComplaint) return;
+      const recordNo = document.getElementById('inputManualRecordNo').value.trim();
+      const officer = document.getElementById('inputOfficerName').value.trim();
+
+      // Validate format XXX/YY/ZZZZ
+      const regexFormat = /^[0-9]{3}\/[0-9]{2}\/[0-9]{4}$/;
+      if (!regexFormat.test(recordNo)) {
+        showToast("Format No. Rekod mestilah XXX/YY/ZZZZ (Contoh: 015/08/2026).", "error");
+        return;
+      }
+
+      // Check for uniqueness
+      const exists = complaints.some(c => c.record_no === recordNo && c.id !== currentSelectedComplaint.id);
+      if (exists) {
+        showToast("Nombor Rekod ini telah wujud dalam pangkalan data.", "error");
+        return;
+      }
+
+      // Update complaint
+      currentSelectedComplaint.record_no = recordNo;
+      currentSelectedComplaint.received_by = officer || "Pegawai Integriti UMT";
+      currentSelectedComplaint.received_date = new Date().toISOString().replace('T', ' ').substring(0, 19);
+      currentSelectedComplaint.status = "REGISTERED";
+
+      // Trigger Automated Email 1
+      sendSimulatedEmail(
+        "EMAIL_1_ACKNOWLEDGEMENT",
+        currentSelectedComplaint.email,
+        `[UMT-ADUAN] Pemakluman Penerimaan Aduan - No. Rekod: ${recordNo}`,
+        generateEmail1Content(currentSelectedComplaint)
+      );
+
+      showToast(`Aduan berjaya didaftarkan dengan No. Rekod: ${recordNo}. E-mel 1 telah dihantar!`, "success");
+      closeDetailModal();
+      renderAdminDashboard();
+    }
+
+    function handleRejectComplaint() {
+      if (!currentSelectedComplaint) return;
+      // Rejecting complaint: no record number generated, NO email sent!
+      currentSelectedComplaint.status = "REJECTED";
+      currentSelectedComplaint.record_no = null;
+
+      showToast("Aduan ditolak (spam/tidak berasas). Tiada nombor direkodkan dan tiada e-mel dihantar.", "info");
+      closeDetailModal();
+      renderAdminDashboard();
+    }
+
+    function handleResolveComplaint() {
+      if (!currentSelectedComplaint) return;
+      const resolution = document.getElementById('inputResolutionText').value.trim();
+
+      if (!resolution) {
+        showToast("Sila masukkan butiran keputusan rasmi sebelum menyelesaikan aduan.", "error");
+        return;
+      }
+
+      currentSelectedComplaint.status = "RESOLVED";
+      currentSelectedComplaint.resolution = resolution;
+      currentSelectedComplaint.resolution_date = new Date().toISOString().replace('T', ' ').substring(0, 19);
+
+      // Trigger Automated Email 2
+      sendSimulatedEmail(
+        "EMAIL_2_RESOLUTION",
+        currentSelectedComplaint.email,
+        `[UMT-ADUAN] Maklum Balas / Keputusan Rasmi Aduan - No. Rekod: ${currentSelectedComplaint.record_no}`,
+        generateEmail2Content(currentSelectedComplaint)
+      );
+
+      showToast(`Aduan ditandakan SELESAI. E-mel makluman keputusan telah dihantar!`, "success");
+      closeDetailModal();
+      renderAdminDashboard();
+    }
+
+    function generateEmail1Content(item) {
+      const typeText = item.complaint_type === 'FORM_A' ? 'Dakwaan Salah Laku (Form A)' : 'Gangguan Seksual (Form B)';
+      return `
+Salam Sejahtera / Salam Malaysia Madani,
+
+YBhg. Dato'/Datin/Dr./Tuan/Puan ${item.full_name},
+
+Aduan anda berkenaan "${typeText}" telah berjaya disemak dan didaftarkan secara rasmi oleh pihak Pentadbiran Universiti Malaysia Terengganu (UMT).
+
+BUTIRAN PENDAFTARAN ADUAN:
+--------------------------------------------------
+• Nombor Rekod Rasmi : ${item.record_no} (Sila simpan nombor ini untuk rujukan)
+• Tarikh Didaftarkan : ${item.received_date}
+• Pegawai Penerima   : ${item.received_by}
+• Kategori Aduan     : ${typeText}
+--------------------------------------------------
+
+Aduan anda kini telah disalurkan kepada Jawatankuasa / Unit Berkaitan untuk siasatan dan tindakan lanjut di bawah kerahsiaan terpelihara.
+
+Pemakluman keputusan rasmi akan dihantar ke alamat e-mel ini sebaik sahaja siasatan selesai.
+
+Sekian, terima kasih.
+
+"INTEGRITI MEMACU KEGEMILANGAN"
+Unit Integriti & Tatatertib
+Universiti Malaysia Terengganu (UMT)
+      `.trim();
+    }
+
+    function generateEmail2Content(item) {
+      return `
+Salam Sejahtera / Salam Malaysia Madani,
+
+YBhg. Dato'/Datin/Dr./Tuan/Puan ${item.full_name},
+
+Merujuk kepada aduan anda dengan No. Rekod: ${item.record_no}, berikut adalah maklum balas dan keputusan rasmi daripada pihak Universiti Malaysia Terengganu:
+
+RINGKASAN KEPUTUSAN / TINDAKAN:
+--------------------------------------------------
+${item.resolution}
+--------------------------------------------------
+Tarikh Keputusan: ${item.resolution_date}
+
+Pihak UMT merakamkan setinggi-tinggi penghargaan atas keprihatinan anda dalam membantu memelihara integriti dan persekitaran yang selamat di UMT.
+
+Sekian, terima kasih.
+
+Unit Integriti & Tatatertib
+Universiti Malaysia Terengganu (UMT)
+      `.trim();
+    }
+
+    function sendSimulatedEmail(emailType, recipient, subject, bodyText) {
+      const emailObj = {
+        id: "mail-" + Date.now(),
+        type: emailType,
+        recipient: recipient,
+        subject: subject,
+        body: bodyText,
+        sent_at: new Date().toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      };
+
+      emailLogs.unshift(emailObj);
+      renderEmailDrawer();
+
+      // Show notification on the email icon
+      const badge = document.getElementById('emailNotificationBadge');
+      badge.innerText = emailLogs.length;
+      badge.classList.remove('hidden');
+    }
+
+    function renderEmailDrawer() {
+      const container = document.getElementById('emailLogContainer');
+      const emptyMsg = document.getElementById('emailEmptyMessage');
+
+      if (emailLogs.length === 0) {
+        if (emptyMsg) emptyMsg.classList.remove('hidden');
+        return;
+      } else {
+        if (emptyMsg) emptyMsg.classList.add('hidden');
+      }
+
+      container.innerHTML = '';
+      emailLogs.forEach(mail => {
+        const mailCard = document.createElement('div');
+        mailCard.className = "bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-md space-y-2";
+        
+        const typeBadge = mail.type === 'EMAIL_1_ACKNOWLEDGEMENT'
+          ? `<span class="bg-amber-500/20 text-amber-300 border border-amber-400/40 text-[10px] font-bold px-2 py-0.5 rounded">E-mel 1: Pengesahan Penerimaan</span>`
+          : `<span class="bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 text-[10px] font-bold px-2 py-0.5 rounded">E-mel 2: Keputusan Aduan</span>`;
+
+        mailCard.innerHTML = `
+          <div class="flex items-center justify-between">
+            ${typeBadge}
+            <span class="text-[10px] text-slate-400">${mail.sent_at}</span>
+          </div>
+          <div class="text-xs">
+            <span class="text-slate-400">Kepada:</span> <strong class="text-amber-300">${mail.recipient}</strong>
+          </div>
+          <div class="text-xs font-bold text-white leading-tight">
+            ${mail.subject}
+          </div>
+          <div class="mt-2 bg-slate-900/90 p-3 rounded-lg border border-slate-800 text-[11px] font-mono text-slate-300 whitespace-pre-wrap leading-relaxed">
+${mail.body}
+          </div>
+        `;
+        container.appendChild(mailCard);
+      });
+    }
+
+    function toggleEmailDrawer() {
+      const drawer = document.getElementById('emailSimulationDrawer');
+      drawer.classList.toggle('translate-x-full');
+    }
+
+    function clearEmailLogs() {
+      emailLogs = [];
+      const badge = document.getElementById('emailNotificationBadge');
+      badge.innerText = 0;
+      badge.classList.add('hidden');
+      renderEmailDrawer();
+    }
+
+    // Toast helper without alert()
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toastNotification');
+      const msgEl = document.getElementById('toastMessage');
+      const iconEl = document.getElementById('toastIcon');
+
+      msgEl.innerText = message;
+      if (type === 'success') {
+        iconEl.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400"></i>';
+      } else if (type === 'error') {
+        iconEl.innerHTML = '<i class="fa-solid fa-circle-exclamation text-red-400"></i>';
+      } else {
+        iconEl.innerHTML = '<i class="fa-solid fa-circle-info text-blue-400"></i>';
+      }
+
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-24', 'opacity-0');
+      }, 3500);
+    }
+
+    // Initialize application on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      renderAdminDashboard();
+      updatePendingBadge();
+    });
+  </script>
+</body>
+</html>
